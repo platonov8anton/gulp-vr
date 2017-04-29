@@ -1,8 +1,10 @@
 'use strict'
 
-/* global describe, context, it */
+/* global describe, context, before, it */
 
 const _ = require('assert')
+const vr = require('../')
+const Vinyl = require('vinyl')
 const {name, version} = require('../package')
 
 describe(name + '@' + version, function () {
@@ -10,14 +12,13 @@ describe(name + '@' + version, function () {
     context('hash', function () {
       const hash = require('../lib/hash')
 
-      let algorithm = 'sha1'
       let data = Buffer.from('this is a test')
 
       it('should return a "hex" string', function () {
-        _.strictEqual(hash({algorithm, data, encoding: 'hex'}), 'fa26be19de6bff93f70bc2308434e4a440bbad02')
+        _.strictEqual(hash('md5', data, 'hex'), '54b0c58c7ce9f2a8b551351102ee0938')
       })
       it('should return a "base64" string', function () {
-        _.strictEqual(hash({algorithm, data, encoding: 'base64'}), '+ia+Gd5r/5P3C8IwhDTkpEC7rQI=')
+        _.strictEqual(hash('sha1', data, 'base64'), '+ia+Gd5r/5P3C8IwhDTkpEC7rQI=')
       })
     })
     describe('normalize', function () {
@@ -31,6 +32,33 @@ describe(name + '@' + version, function () {
           _.throws(() => { base64(1) }, TypeError)
         })
       })
+    })
+  })
+  describe(name, function () {
+    let files = []
+
+    function writeEnd (stream) {
+      files.forEach(file => stream.write(file))
+      stream.end()
+    }
+
+    before(function () {
+      files.push(new Vinyl({cwd: '/', base: '/a', path: '/a/buffer.ext', contents: Buffer.from('this is a test')}))
+      files.push(new Vinyl({cwd: '/', base: '/a/b', path: '/a/b/null.ext', contents: null}))
+    })
+
+    it('with default settings', function (done) {
+      let stream = vr.modify()
+
+      stream
+          .on('data', (file) => {
+            console.log(file, file.vr)
+          })
+          .on('end', () => {
+            done()
+          })
+
+      writeEnd(stream)
     })
   })
 })

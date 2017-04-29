@@ -2,74 +2,83 @@
 
 const hash = require('./lib/hash')
 const base64 = require('./lib/normalize/base64')
-const {readJsonSync, outputJson} = require('fs-extra')
+// const Vinyl = require('vinyl')
 const {obj: through2} = require('through2')
 
 /**
- * Creates a manifest from the contents of json files
+ * Modifies vinyl files: file.ext => ia-Gd5r_5P3C8IwhDTkpEC7rQI.ext
  *
- * @param {...String} [paths] Paths to files
- * @return {Object} Collection, __proto__ === null
- */
-exports.createManifest = (...paths) => Object.assign(
-    Object.create(null),
-    ...paths.map(path => readJsonSync(path))
-)
-
-/**
- * Renames files: file.ext => ia-Gd5r_5P3C8IwhDTkpEC7rQI.ext
- *
- * @param {String} [path] Path to file, to save the result
+ * @param {Function} [modify] Should modify file, this === vinyl file
+ * @param {String} [hash.algorithm]
+ * @param {String} [hash.encoding]
  * @return {Stream}
  */
-exports.rename = ({
+exports.modify = ({
+    modify,
     hash: {
-        algorithm = 'sha1',
-        encoding = 'base64'
-    },
-    rename
-}) => {
+        algorithm: hashAlgorithm = 'sha1',
+        encoding: hashEncoding = 'base64'
+    } = {}
+} = {}) => {
+  let createHash = null
 
-  if (encoding !== 'hex' && encoding !== 'base64') {
-    throw new Error(`Hash encoding "${encoding}" not supported`)
+  if (typeof modify !== 'function') {
+    modify = null
+  }
+
+  if (!modify || modify.length > 0) {
+    if (hashEncoding === 'base64') {
+      createHash = (data) => base64(hash(hashAlgorithm, data, 'base64'))
+    } else if (hashEncoding === 'hex') {
+      createHash = (data) => hash(hashAlgorithm, data, 'hex')
+    } else {
+      throw new Error(`Hash encoding "${hashEncoding}" not supported`)
+    }
   }
 
   return through2(
-      (file, enc, callback) => {
-        if (file.isBuffer()) {
-          let stem = hash({algorithm, encoding, data: file.contents})
+      function (file, encoding, callback) {
+        if (file.isStream()) {
+          return callback(new TypeError('Streaming not supported'))
+        }
 
-          if (encoding === 'base64') {
-            stem = base64(stem)
+        let {base, path} = file
+
+        if (modify) {
+          let parameters = []
+
+          if (createHash) {
+            parameters.push(file.isBuffer() ? createHash(file.contents) : null)
           }
 
-          if (typeof rename === 'function') {
-            stem = rename(file.stem, stem)
+          modify.apply(file, parameters)
+        } else if (file.isBuffer()) {
+          file.stem = createHash(file.contents)
+        }
 
-            if (typeof stem !== 'string') {
-              throw new TypeError('Base64 must be a string')
-            }
-            if (!stem) {
-              throw new Error('Base64 must be a string')
-            }
-          }
-
-          // file._base = file.base
-          // file._path = file.path
-
-          file.stem = stem
+        if (path !== file.path) {
+          file.vr = {base, path}
         }
 
         callback(null, file)
       }
-      /*,
-      (callback) => {
-        if (path) {
-          outputJson(path, manifest, callback)
-        } else {
-          callback()
-        }
-      }
-      */
   )
 }
+
+/*
+exports.manifest = () => {
+  let manifest = {};
+
+  return through2(
+      function (file, encoding, callback) {
+        callback()
+      },
+      function (callback) {
+        let file = new Vinyl()
+
+        this.push(file)
+        callback()
+      }
+  )
+}
+*/
