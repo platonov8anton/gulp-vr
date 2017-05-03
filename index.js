@@ -5,6 +5,16 @@ const base64 = require('./lib/normalize/base64')
 // const Vinyl = require('vinyl')
 const {obj: through2} = require('through2')
 
+function createHashBase64 (algorithm, data) {
+  return base64(hash(algorithm, data, 'base64'))
+}
+function createHashHex (algorithm, data) {
+  return hash(algorithm, data, 'hex')
+}
+
+exports.createHashBase64 = createHashBase64
+exports.createHashHex = createHashHex
+
 /**
  * Modifies vinyl files: file.ext => ia-Gd5r_5P3C8IwhDTkpEC7rQI.ext
  *
@@ -20,47 +30,42 @@ exports.modify = ({
         encoding: hashEncoding = 'base64'
     } = {}
 } = {}) => {
-  let createHash = null
-
   if (typeof modify !== 'function') {
-    modify = null
-  }
+    let createHash = null
 
-  if (!modify || modify.length > 0) {
     if (hashEncoding === 'base64') {
-      createHash = (data) => base64(hash(hashAlgorithm, data, 'base64'))
+      createHash = (data) => createHashBase64(hashAlgorithm, data)
     } else if (hashEncoding === 'hex') {
-      createHash = (data) => hash(hashAlgorithm, data, 'hex')
+      createHash = (data) => createHashHex(hashAlgorithm, data)
     } else {
       throw new Error(`Hash encoding "${hashEncoding}" not supported`)
+    }
+
+    modify = function (file, callback) {
+      if (file.isBuffer()) {
+        file.stem = createHash(file.contents)
+      }
+
+      callback(null, file)
     }
   }
 
   return through2(
       function (file, encoding, callback) {
-        if (file.isStream()) {
-          return callback(new TypeError('Streaming not supported'))
-        }
-
         let {base, path} = file
 
-        if (modify) {
-          let parameters = []
-
-          if (createHash) {
-            parameters.push(file.isBuffer() ? createHash(file.contents) : null)
+        modify.call(this, file, (error, file) => {
+          if (error) {
+            callback(error)
+          } else if (file && file.isVinyl()) {
+            if (path !== file.path) {
+              file.vr = {base, path}
+            }
+            callback(null, file)
+          } else {
+            callback()
           }
-
-          modify.apply(file, parameters)
-        } else if (file.isBuffer()) {
-          file.stem = createHash(file.contents)
-        }
-
-        if (path !== file.path) {
-          file.vr = {base, path}
-        }
-
-        callback(null, file)
+        })
       }
   )
 }
