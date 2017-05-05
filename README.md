@@ -12,28 +12,46 @@ npm install gulp-vr --save-dev
 ## Usage
 ```
 const gulp = require('gulp')
-const vg = require('gulp-vr')
+const vr = require('gulp-vr')
  
 gulp.task('default', () => {
   return gulp.src('src/*.{svg,css,js}')
-      .pipe(vg.digest())
+      .pipe(vr.modifier())
       .pipe(gulp.dest('dest'));
 })
 ```
 
 ## API
 
-### vg.createManifest([...paths])
-* @param {...String} [paths] Paths to files
-* @return {Object} Collection, \_\_proto__ === null
+At the beginning 
+https://nodejs.org/api/crypto.html#crypto_class_hash
 
-Creates a manifest from the contents of json files
+### vr.createHashBase64(algorithm, data)
+* @param {String} algorithm
+* @param {String|Buffer} data
+* @return {String}
 
-### vg.digest([path])
-* @param {String} [path] Path to file, to save the result
+Returns a string of the form: ia-Gd5r_5P3C8IwhDTkpEC7rQI  
+Convert base64 to a valid file name  
+Valid characters in base64: 'A-Z', 'a-z', '0-9', '+', '/', '='  
+'+', '/', '=' symbols in file names are forbidden  
+
+### vr.createHashHex(algorithm, data)
+* @param {String} algorithm
+* @param {String|Buffer} data
+* @return {String}
+
+Returns a string of the form: 54b0c58c7ce9f2a8b551351102ee0938
+
+### vr.modifier(options)
+* @param {Object} [options]
+* @param {Function} [options.modify]
+* @param {Object} [options.hash]
+* @param {String} [options.hash.algorithm=sha1]
+* @param {String} [options.hash.encoding=base64]
 * @return {Stream}
 
-Renames files: file.ext => ia-Gd5r_5P3C8IwhDTkpEC7rQI.ext
+Modifies vinyl files. By default: file.ext => ia-Gd5r_5P3C8IwhDTkpEC7rQI.ext
 
 ## License
 

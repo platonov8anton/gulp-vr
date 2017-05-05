@@ -48,11 +48,14 @@ describe(name + '@' + version, function () {
     })
 
     it('with default settings', function (done) {
-      let stream = vr.modify()
+      let stream = vr.modifier()
 
       stream
           .on('data', (file) => {
-            console.log(file, file.vr)
+            if (file.vr) {
+              _.deepStrictEqual(file.vr, {base: '/a', path: '/a/buffer.ext'})
+              _.strictEqual(file.basename, 'ia-Gd5r_5P3C8IwhDTkpEC7rQI.ext')
+            }
           })
           .on('end', () => {
             done()

@@ -15,15 +15,7 @@ function createHashHex (algorithm, data) {
 exports.createHashBase64 = createHashBase64
 exports.createHashHex = createHashHex
 
-/**
- * Modifies vinyl files: file.ext => ia-Gd5r_5P3C8IwhDTkpEC7rQI.ext
- *
- * @param {Function} [modify] Should modify file, this === vinyl file
- * @param {String} [hash.algorithm]
- * @param {String} [hash.encoding]
- * @return {Stream}
- */
-exports.modify = ({
+exports.modifier = ({
     modify,
     hash: {
         algorithm: hashAlgorithm = 'sha1',
@@ -31,7 +23,7 @@ exports.modify = ({
     } = {}
 } = {}) => {
   if (typeof modify !== 'function') {
-    let createHash = null
+    let createHash
 
     if (hashEncoding === 'base64') {
       createHash = (data) => createHashBase64(hashAlgorithm, data)
@@ -57,7 +49,7 @@ exports.modify = ({
         modify.call(this, file, (error, file) => {
           if (error) {
             callback(error)
-          } else if (file && file.isVinyl()) {
+          } else if (file) {
             if (path !== file.path) {
               file.vr = {base, path}
             }
