@@ -1,6 +1,6 @@
 {
   "name": "gulp-vr",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Gulp plugin for long term caching static files. Renames files: file.ext => ia-Gd5r_5P3C8IwhDTkpEC7rQI.ext",
   "main": "index.js",
   "scripts": {
