@@ -36,5 +36,11 @@
   "devDependencies": {
     "mocha": "^3.3.0",
     "standard": "^10.0.2"
+  },
+  "files": [
+    "./lib"
+  ],
+  "directories": {
+    "lib": "./lib"
   }
 }
