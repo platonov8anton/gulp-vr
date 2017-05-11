@@ -2,8 +2,9 @@
 
 const hash = require('./lib/hash')
 const base64 = require('./lib/normalize/base64')
-// const Vinyl = require('vinyl')
+const File = require('vinyl')
 const {obj: through2} = require('through2')
+const {join} = require('path')
 
 function createHashBase64 (algorithm, data) {
   return base64(hash(algorithm, data, 'base64'))
@@ -22,6 +23,19 @@ exports.modifier = ({
         encoding: hashEncoding = 'base64'
     } = {}
 } = {}) => {
+  let proxyHandler = {
+    set (file, property, value) {
+      switch (property) {
+        case 'basename':
+        case 'stem':
+        case 'extname':
+          file[property] = value
+          return true
+      }
+      return false
+    }
+  }
+
   if (typeof modify !== 'function') {
     let createHash
 
@@ -33,49 +47,53 @@ exports.modifier = ({
       throw new Error(`Hash encoding "${hashEncoding}" not supported`)
     }
 
-    modify = function (file, callback) {
+    modify = (file) => {
       if (file.isBuffer()) {
         file.stem = createHash(file.contents)
       }
-
-      callback(null, file)
     }
   }
 
   return through2(
       function (file, encoding, callback) {
-        let {base, path} = file
+        if (file.isStream()) {
+          return callback(new Error('gulp-vr: Streaming not supported'))
+        }
 
-        modify.call(this, file, (error, file) => {
-          if (error) {
-            callback(error)
-          } else if (file) {
-            if (path !== file.path) {
-              file.vr = {base, path}
-            }
-            callback(null, file)
-          } else {
-            callback()
-          }
-        })
+        let {relative} = file
+
+        modify(new Proxy(file, proxyHandler))
+
+        if (file.relative !== relative) {
+          file.vrRelative = relative
+        }
+
+        callback(null, file)
       }
   )
 }
 
-/*
-exports.manifest = () => {
-  let manifest = {};
+exports.manifest = ({cwd, base, path} = {}) => {
+  let manifest = {}
 
   return through2(
       function (file, encoding, callback) {
+        if (file.vrRelative) {
+          manifest[file.vrRelative] = file.relative
+        }
+
         callback()
       },
       function (callback) {
-        let file = new Vinyl()
+        if (Object.keys(manifest).length > 0) {
+          if (!path) path = join(base || cwd || process.cwd(), 'manifest.json')
 
-        this.push(file)
+          let options = {cwd, base, path, contents: Buffer.from(JSON.stringify(manifest))}
+
+          this.push(new File(options))
+        }
+
         callback()
       }
   )
 }
-*/
