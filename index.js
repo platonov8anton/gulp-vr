@@ -103,7 +103,7 @@ exports.manifest = ({
             file.basename = basename
           } else {
             if (stem) file.stem = stem
-            if (extname == null) file.extname = extname
+            if (extname != null) file.extname = extname
           }
           file.contents = Buffer.from(JSON.stringify(manifest))
 
