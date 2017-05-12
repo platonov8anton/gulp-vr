@@ -42,26 +42,13 @@ describe(name + '@' + version, function () {
       stream.end()
     }
 
-    beforeEach(function () {
-      files = [
-        new File({
-          vrOrder: 0,
-          cwd: '/',
-          base: '/a',
-          path: '/a/buffer.ext',
-          contents: Buffer.from('this is a test')
-        }),
-        new File({
-          vrOrder: 1,
-          cwd: '/',
-          base: '/a/b',
-          path: '/a/b/null.ext',
-          contents: null
-        })
-      ]
-    })
-
     context('#modifier', function () {
+      beforeEach(function () {
+        files = [
+          new File({vrOrder: 0, base: '/a', path: '/a/buffer.ext', contents: Buffer.from('this is a test')}),
+          new File({vrOrder: 1, base: '/a/b', path: '/a/b/null.ext', contents: null})
+        ]
+      })
       it('should perform with default settings', function (done) {
         let stream = vr.modifier()
 
@@ -95,6 +82,25 @@ describe(name + '@' + version, function () {
                 _.strictEqual(file.vrRelative, 'null.ext', 'contents === null (1)')
                 _.strictEqual(file.basename, 'null.v1.0.0.ext', 'contents === null (2)')
               }
+            })
+            .on('end', done)
+
+        writeEnd(stream)
+      })
+    })
+    context('#manifest', function () {
+      beforeEach(function () {
+        files = [
+          new File({vrRelative: 'buffer.ext', base: '/', path: '/a/buffer.v1.0.0.ext', contents: null}),
+          new File({base: '/a/b', path: '/a/b/null.v1.0.0.ext', contents: null})
+        ]
+      })
+      it('should perform with default settings', function (done) {
+        let stream = vr.manifest()
+
+        stream
+            .on('data', (file) => {
+              _.deepStrictEqual(JSON.parse(file.contents.toString()), {'buffer.ext': 'a/buffer.v1.0.0.ext'})
             })
             .on('end', done)
 

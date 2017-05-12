@@ -73,7 +73,15 @@ exports.modifier = ({
   )
 }
 
-exports.manifest = ({cwd, base, path} = {}) => {
+exports.manifest = ({
+    file: {
+        base,
+        path,
+        basename,
+        stem,
+        extname
+    } = {}
+} = {}) => {
   let manifest = {}
 
   return through2(
@@ -86,11 +94,20 @@ exports.manifest = ({cwd, base, path} = {}) => {
       },
       function (callback) {
         if (Object.keys(manifest).length > 0) {
-          if (!path) path = join(base || cwd || process.cwd(), 'manifest.json')
+          let file = {
+            base,
+            path: path || join(process.cwd(), 'manifest.json')
+          }
 
-          let options = {cwd, base, path, contents: Buffer.from(JSON.stringify(manifest))}
+          if (basename) {
+            file.basename = basename
+          } else {
+            if (stem) file.stem = stem
+            if (extname) file.extname = extname
+          }
+          file.contents = Buffer.from(JSON.stringify(manifest))
 
-          this.push(new File(options))
+          this.push(new File(file))
         }
 
         callback()
