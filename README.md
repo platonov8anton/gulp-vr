@@ -1,12 +1,22 @@
 # gulp-vr
 
-Gulp plugin for long term caching static files. Renames files: file.ext => ia-Gd5r_5P3C8IwhDTkpEC7rQI.ext
+Gulp plugin for creating versions of static files.
+
+Examples: 
+* file.ext => ia-Gd5r_5P3C8IwhDTkpEC7rQI.ext
+* file.ext => 54b0c58c7ce9f2a8b551351102ee0938.ext
+* file.ext => file-1102ee0938.ext
+* something else
 
 [![Standard - JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
 
 ## Install
 ```
 npm install gulp-vr --save-dev
+```
+or
+```
+npm i gulp-vr -D
 ```
 
 ## Usage
