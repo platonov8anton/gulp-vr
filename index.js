@@ -16,6 +16,8 @@ function createHashHex (algorithm, data) {
 exports.createHashBase64 = createHashBase64
 exports.createHashHex = createHashHex
 
+/* modifier & manifest */
+
 exports.modifier = ({
     modify,
     hash: {
@@ -44,7 +46,7 @@ exports.modifier = ({
     } else if (hashEncoding === 'hex') {
       createHash = (data) => createHashHex(hashAlgorithm, data)
     } else {
-      throw new Error(`Hash encoding "${hashEncoding}" not supported`)
+      throw new Error(`gulp-vr: Hash encoding "${hashEncoding}" not supported`)
     }
 
     modify = (file) => {

@@ -3,8 +3,6 @@
 /* global describe, context, beforeEach, it */
 
 const _ = require('assert')
-const vr = require('../')
-const File = require('vinyl')
 const {name, version} = require('../package')
 
 describe(name + '@' + version, function () {
@@ -14,11 +12,11 @@ describe(name + '@' + version, function () {
 
       let data = Buffer.from('this is a test')
 
-      it('should return a "hex" string', function () {
-        _.strictEqual(hash('md5', data, 'hex'), '54b0c58c7ce9f2a8b551351102ee0938')
-      })
       it('should return a "base64" string', function () {
         _.strictEqual(hash('sha1', data, 'base64'), '+ia+Gd5r/5P3C8IwhDTkpEC7rQI=')
+      })
+      it('should return a "hex" string', function () {
+        _.strictEqual(hash('md5', data, 'hex'), '54b0c58c7ce9f2a8b551351102ee0938')
       })
     })
     describe('normalize', function () {
@@ -35,6 +33,22 @@ describe(name + '@' + version, function () {
     })
   })
   describe('module', function () {
+    const File = require('vinyl')
+    const vr = require('../')
+
+    context('#createHashBase64', function () {
+      it('should return a normalized "base64" string', function () {
+        _.strictEqual(vr.createHashBase64('sha1', Buffer.from('this is a test')), 'ia-Gd5r_5P3C8IwhDTkpEC7rQI')
+      })
+    })
+    context('#createHashHex', function () {
+      it('should return a normalized "hex" string', function () {
+        _.strictEqual(vr.createHashHex('sha1', Buffer.from('test')), 'a94a8fe5ccb19ba61c4c0873d391e987982fbbd3')
+      })
+    })
+
+    /* modifier & manifest */
+
     let files
 
     function writeEnd (stream) {
